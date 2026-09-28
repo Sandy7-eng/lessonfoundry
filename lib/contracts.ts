@@ -280,7 +280,8 @@ export type QualityIssueType =
   | "missing-objective-coverage"
   | "difficulty-mismatch"
   | "malformed-answer-key"
-  | "near-identical-variants";
+  | "near-identical-variants"
+  | "orphan-alignment";
 
 export interface QualityIssue {
   issueId: QualityId;
@@ -288,6 +289,8 @@ export interface QualityIssue {
   severity: QualityIssueSeverity;
   /** The asset that contains the problem. */
   affectedAssetId: AssetId;
+  /** Optional: The objective that contains or relates to the problem. */
+  affectedObjectiveId?: ObjectiveId;
   /** Human-readable explanation for the teacher review UI. */
   message: string;
 }
