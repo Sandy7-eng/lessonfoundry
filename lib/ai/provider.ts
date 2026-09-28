@@ -24,7 +24,7 @@
  *   4. Application code remains unchanged
  */
 
-import type { GenerationInput, GenerationResult, GenerationError } from "@/lib/ai/types";
+import type { GenerationInput, GenerationResult, GenerationError, ProviderGenerationResult } from "@/lib/ai/types";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PROVIDER INTERFACE
@@ -33,7 +33,7 @@ import type { GenerationInput, GenerationResult, GenerationError } from "@/lib/a
 
 export interface AIGenerationProvider {
   /**
-   * Generate a complete LearningPack from the given input.
+   * Generate raw content from the given input.
    *
    * Implementations MUST:
    *   - Return { status: "failure", error } rather than throwing on failure.
@@ -41,7 +41,7 @@ export interface AIGenerationProvider {
    *   - Keep API keys server-side only (never log or serialise to the client).
    *   - Use buildGenerationPrompt() from lib/ai/prompts.ts to construct prompts.
    */
-  generate(input: GenerationInput): Promise<GenerationResult>;
+  generate(input: GenerationInput): Promise<ProviderGenerationResult>;
 
   /**
    * Human-readable identifier for logging and provenance records.
@@ -132,15 +132,88 @@ export function inputValidationFailure(
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const stubProvider: AIGenerationProvider = {
-  providerLabel: "stub/not-configured",
+  providerLabel: "stub/deterministic-generator",
 
-  async generate(_input: GenerationInput): Promise<GenerationResult> {
-    const error: GenerationError = {
-      code: "provider-unavailable",
-      message:
-        "No AI provider is configured. Connect a provider in lib/ai/providers/ to enable generation.",
-      providerDetail: "StubProvider — placeholder only, not a real provider.",
+  async generate(input: GenerationInput): Promise<ProviderGenerationResult> {
+    const alignment = input.objectives.map((obj) => ({
+      objectiveId: obj.objectiveId,
+      rationale: "Stub generation alignment.",
+    }));
+
+    return {
+      status: "success",
+      data: {
+        conceptExplanation: {
+          title: "Concept Explanation Stub",
+          body: "This is a deterministic stub concept explanation.",
+          objectiveAlignment: alignment,
+        },
+        workedExample: {
+          title: "Worked Example Stub",
+          steps: [
+            { instruction: "Step 1", explanation: "Explanation 1" },
+            { instruction: "Step 2", explanation: "Explanation 2" },
+          ],
+          objectiveAlignment: alignment,
+        },
+        formativeQuiz: {
+          title: "Formative Quiz Stub",
+          questions: [
+            {
+              question: {
+                type: "multiple-choice",
+                questionId: "stub-q1",
+                stem: "What is the answer?",
+                options: [
+                  { key: "A", text: "Option A" },
+                  { key: "B", text: "Option B" },
+                ],
+                objectiveAlignment: alignment,
+              },
+              answer: "A",
+              explanation: "Because it is a stub.",
+            },
+          ],
+          objectiveAlignment: alignment,
+        },
+        easyPractice: {
+          title: "Easy Practice Stub",
+          questions: [
+            {
+              question: {
+                type: "short-answer",
+                questionId: "stub-easy-q1",
+                prompt: "Explain the stub.",
+                objectiveAlignment: alignment,
+              },
+              answer: "It is a stub.",
+              explanation: "Self explanatory.",
+            },
+          ],
+          objectiveAlignment: alignment,
+        },
+        advancedPractice: {
+          title: "Advanced Practice Stub",
+          questions: [
+            {
+              question: {
+                type: "short-answer",
+                questionId: "stub-adv-q1",
+                prompt: "Critically analyze the stub.",
+                objectiveAlignment: alignment,
+              },
+              answer: "It remains a stub.",
+              explanation: "Deep truth.",
+            },
+          ],
+          objectiveAlignment: alignment,
+        },
+        revisionSheet: {
+          title: "Revision Sheet Stub",
+          points: ["Point 1", "Point 2"],
+          objectiveAlignment: alignment,
+        },
+      },
     };
-    return { status: "failure", error };
   },
 };

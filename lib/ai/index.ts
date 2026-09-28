@@ -47,6 +47,9 @@ export { createOpenAIProofProvider } from "@/lib/ai/providers/openai";
 // ── Verification helper (server-only) ─────────────────────────────────────────
 export { runProofOfConnection } from "@/lib/ai/verify";
 
+// ── Generator layer (server-only) ─────────────────────────────────────────────
+export { generateLearningPack } from "@/lib/ai/generator";
+
 /**
  * The active provider label for logging and provenance records.
  * Swap this when a full pack provider is implemented.

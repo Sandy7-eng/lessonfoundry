@@ -109,6 +109,51 @@ export type GenerationResult =
   | { status: "success"; pack: LearningPack }
   | { status: "failure"; error: GenerationError };
 
+import type { QuizQuestion, ObjectiveAlignment } from "@/lib/contracts";
+
+export interface RawQuizQuestion {
+  question: QuizQuestion;
+  answer: string;
+  explanation: string;
+}
+
+export interface RawProviderOutput {
+  conceptExplanation: {
+    title: string;
+    body: string;
+    objectiveAlignment: ObjectiveAlignment[];
+  };
+  workedExample: {
+    title: string;
+    steps: Array<{ instruction: string; explanation?: string }>;
+    objectiveAlignment: ObjectiveAlignment[];
+  };
+  formativeQuiz: {
+    title: string;
+    questions: RawQuizQuestion[];
+    objectiveAlignment: ObjectiveAlignment[];
+  };
+  easyPractice: {
+    title: string;
+    questions: RawQuizQuestion[];
+    objectiveAlignment: ObjectiveAlignment[];
+  };
+  advancedPractice: {
+    title: string;
+    questions: RawQuizQuestion[];
+    objectiveAlignment: ObjectiveAlignment[];
+  };
+  revisionSheet: {
+    title: string;
+    points: string[];
+    objectiveAlignment: ObjectiveAlignment[];
+  };
+}
+
+export type ProviderGenerationResult =
+  | { status: "success"; data: RawProviderOutput }
+  | { status: "failure"; error: GenerationError };
+
 // ─────────────────────────────────────────────────────────────────────────────
 // 5. PROOF-OF-CONNECTION RESULT (Task 10 only)
 //    Used during provider verification before full pack generation is built.
