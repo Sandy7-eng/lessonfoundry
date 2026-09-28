@@ -6,6 +6,7 @@ import type {
   LearningObjective,
   ReviewStatus,
 } from "@/lib/contracts";
+import type { AssetVersionHistory } from "@/lib/regeneration";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Props
@@ -15,8 +16,11 @@ interface AssetDetailPanelProps {
   asset: LearningPackAsset;
   objectives: LearningObjective[];
   qualityIssues: QualityIssue[];
+  history?: AssetVersionHistory | null;
+  isRegenerating?: boolean;
   onApprove: () => void;
   onNeedsRevision: () => void;
+  onRegenerate?: () => void;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -196,8 +200,11 @@ export function AssetDetailPanel({
   asset,
   objectives,
   qualityIssues,
+  history,
+  isRegenerating,
   onApprove,
   onNeedsRevision,
+  onRegenerate,
 }: AssetDetailPanelProps) {
   const alignedObjectives = objectives.filter((obj) =>
     asset.objectiveAlignment.some((a) => a.objectiveId === obj.objectiveId)
@@ -249,6 +256,44 @@ export function AssetDetailPanel({
         <MetaCell label="Source Version" value={`v${asset.provenance.sourceVersion}`} />
         <MetaCell label="Asset Version" value={`v${asset.provenance.assetVersion}`} />
       </div>
+
+      {/* ── Version History ───────────────────────────────────────────── */}
+      {history && history.entries.length > 0 && (
+        <div className="border-b border-zinc-200 px-5 py-4 dark:border-zinc-800">
+          <h4 className="mb-3 font-mono text-xs font-medium uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+            Version History
+          </h4>
+          <ul className="flex flex-col gap-2">
+            {history.entries.map((entry) => (
+              <li
+                key={entry.version.assetVersion}
+                className={`flex flex-col gap-1 rounded-sm border p-3 ${
+                  entry.version.assetVersion === asset.provenance.assetVersion
+                    ? "border-zinc-300 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800/50"
+                    : "border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                    v{entry.version.assetVersion} {entry.version.assetVersion === asset.provenance.assetVersion && "(Current)"}
+                  </span>
+                  <span
+                    className={`rounded-sm border px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider ${statusBadgeClasses(
+                      entry.reviewStatus
+                    )}`}
+                  >
+                    {statusLabel(entry.reviewStatus)}
+                  </span>
+                </div>
+                <div className="text-xs text-zinc-500 dark:text-zinc-400 flex flex-col gap-0.5 mt-1">
+                  <span className="font-mono">{new Date(entry.provenance.generatedAt).toLocaleString()}</span>
+                  {entry.version.regenerationReason && <span>Reason: {entry.version.regenerationReason}</span>}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* ── Objective Alignment ─────────────────────────────────────────── */}
       <div className="border-b border-zinc-200 px-5 py-4 dark:border-zinc-800">
@@ -364,9 +409,20 @@ export function AssetDetailPanel({
 
       {/* ── Review Actions ──────────────────────────────────────────────── */}
       <div className="px-5 py-4">
-        <h4 className="mb-3 font-mono text-xs font-medium uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
-          Teacher Review
-        </h4>
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="font-mono text-xs font-medium uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+            Teacher Review
+          </h4>
+          {onRegenerate && (
+            <button
+              onClick={onRegenerate}
+              disabled={isRegenerating}
+              className="text-xs font-medium bg-zinc-100 hover:bg-zinc-200 text-zinc-800 px-2.5 py-1 rounded-sm border border-zinc-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-zinc-200 dark:border-zinc-700"
+            >
+              {isRegenerating ? "Regenerating..." : "Regenerate Asset"}
+            </button>
+          )}
+        </div>
 
         {asset.reviewStatus === "approved" ? (
           <p className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-400">

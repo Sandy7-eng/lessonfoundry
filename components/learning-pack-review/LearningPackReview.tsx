@@ -3,6 +3,9 @@
 import { useState, useCallback } from "react";
 import type { LearningPack, LearningPackAsset, QualityIssue, ReviewStatus } from "@/lib/contracts";
 import { approveAsset, requestRevision, isPackStudentReady } from "@/lib/review";
+import { createInitialVersionHistories, regenerateAsset } from "@/lib/regeneration";
+import type { AssetVersionHistory } from "@/lib/regeneration";
+import type { GenerationInput } from "@/lib/ai/types";
 import { AssetNavigation } from "./AssetNavigation";
 import { AssetDetailPanel } from "./AssetDetailPanel";
 
@@ -13,6 +16,7 @@ import { AssetDetailPanel } from "./AssetDetailPanel";
 interface LearningPackReviewProps {
   pack: LearningPack;
   qualityIssues: QualityIssue[];
+  generationInput: GenerationInput;
   /** Called when teacher wants to return to the generation result view */
   onClose?: () => void;
 }
@@ -37,15 +41,22 @@ interface LearningPackReviewProps {
 export function LearningPackReview({
   pack: initialPack,
   qualityIssues,
+  generationInput,
   onClose,
 }: LearningPackReviewProps) {
   // ── Local mutable state ──────────────────────────────────────────────────
   const [assets, setAssets] = useState<LearningPackAsset[]>(initialPack.assets);
+  const [histories, setHistories] = useState<AssetVersionHistory[]>(() =>
+    createInitialVersionHistories(initialPack)
+  );
+  const [isRegenerating, setIsRegenerating] = useState(false);
+  const [regenerationError, setRegenerationError] = useState<string | null>(null);
   const [selectedAssetId, setSelectedAssetId] = useState<string | null>(
     initialPack.assets[0]?.assetId ?? null
   );
 
   const selectedAsset = assets.find((a) => a.assetId === selectedAssetId) ?? null;
+  const selectedHistory = histories.find((h) => h.assetId === selectedAssetId) ?? null;
 
   // ── Derived pack-level state ─────────────────────────────────────────────
   const approvedCount = assets.filter((a) => a.reviewStatus === "approved").length;
@@ -94,6 +105,39 @@ export function LearningPackReview({
       })
     );
   }, [selectedAssetId]);
+
+  const handleRegenerate = useCallback(async () => {
+    if (!selectedAssetId) return;
+    setIsRegenerating(true);
+    setRegenerationError(null);
+    try {
+      // Find current asset inside currentPack so TypeScript is happy with types
+      const assetToRegenerate = currentPack.assets.find(a => a.assetId === selectedAssetId);
+      if (!assetToRegenerate) return;
+      
+      const res = await regenerateAsset({
+        pack: currentPack,
+        targetAssetId: assetToRegenerate.assetId,
+        reason: "Teacher requested regeneration",
+        generationInput,
+      });
+
+      if (res.status === "failure") {
+        setRegenerationError(res.error.message);
+      } else {
+        setAssets(res.updatedPack.assets);
+        setHistories((prev) =>
+          prev.map((h) =>
+            h.assetId === selectedAssetId ? res.versionHistory : h
+          )
+        );
+      }
+    } catch (e: any) {
+      setRegenerationError(e.message || "An unexpected error occurred");
+    } finally {
+      setIsRegenerating(false);
+    }
+  }, [selectedAssetId, currentPack, generationInput]);
 
   // ── Render ───────────────────────────────────────────────────────────────
 
@@ -190,14 +234,22 @@ export function LearningPackReview({
         </div>
 
         {/* Asset detail (right / bottom on mobile) */}
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 flex flex-col">
+          {regenerationError && (
+            <div className="mx-5 mt-5 p-3 text-sm text-red-600 bg-red-50 border border-red-200">
+              {regenerationError}
+            </div>
+          )}
           {selectedAsset ? (
             <AssetDetailPanel
               asset={selectedAsset}
               objectives={initialPack.configuration.objectives}
               qualityIssues={qualityIssues}
+              history={selectedHistory}
+              isRegenerating={isRegenerating}
               onApprove={handleApprove}
               onNeedsRevision={handleNeedsRevision}
+              onRegenerate={handleRegenerate}
             />
           ) : (
             <div className="flex items-center justify-center px-5 py-16">

@@ -38,6 +38,7 @@ export type OrchestrationResult =
       sourceId: string;
       sourceVersion: number;
       sourceReference: string;
+      generationInput: GenerationInput;
     }
   | {
       status: "failure";
@@ -112,5 +113,6 @@ export async function orchestrateGeneration(
     sourceId: source.sourceId,
     sourceVersion: source.sourceVersion,
     sourceReference: source.sourceReference,
+    generationInput,
   };
 }

@@ -35,6 +35,7 @@ export type GenerateActionResult =
       sourceId: string;
       sourceVersion: number;
       sourceReference: string;
+      generationInput: import("@/lib/ai/types").GenerationInput;
     }
   | {
       status: "failure";

@@ -285,6 +285,7 @@ export function GenerationResult({ result }: GenerationResultProps) {
         <LearningPackReview
           pack={result.pack}
           qualityIssues={result.validation.issues}
+          generationInput={result.generationInput}
           onClose={() => setShowReview(false)}
         />
       </div>
