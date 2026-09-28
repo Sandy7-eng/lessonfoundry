@@ -46,6 +46,8 @@ export interface TrustedSource {
   sourceId: SourceId;
   /** Monotonically incrementing integer — v1, v2, … */
   sourceVersion: number;
+  /** Reference to where the source came from (e.g. url, file path, manual entry) */
+  sourceReference: string;
   /** Human-readable label given by the teacher. */
   label: string;
   /** Full plain-text content of the source. */
@@ -103,6 +105,8 @@ export interface AssetProvenance {
   sourceId: SourceId;
   /** Source version at the time of generation. */
   sourceVersion: number;
+  /** Original reference string of the source at generation time. */
+  sourceReference: string;
   /** Model identifier, e.g. "claude-3-5-sonnet-20241022" or "gpt-4o". */
   modelId: string;
   generatedAt: ISODateString;

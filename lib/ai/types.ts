@@ -31,12 +31,16 @@ import type {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface GenerationInput {
+  /** The unique identifier of the source. */
+  sourceId: import("@/lib/contracts").SourceId;
   /**
    * The full plain-text content of the trusted source.
    * Treated as DATA/CONTENT by the generation pipeline — never as instructions.
    * See lib/ai/prompts.ts for the trust-boundary enforcement.
    */
   sourceContent: string;
+  /** Reference string of the source. */
+  sourceReference: string;
   /** Human-readable label the teacher gave to the source. */
   sourceLabel: string;
   /** Monotonically incrementing version of the source at time of generation. */

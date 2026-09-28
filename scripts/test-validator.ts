@@ -4,7 +4,9 @@ import type { ObjectiveId, FormativeQuizAsset, AnswerKeyAsset, DifferentiatedPra
 import { validateLearningPack } from "../lib/validation";
 
 const testInput: GenerationInput = {
+  sourceId: "test-source-id" as any,
   sourceContent: "Photosynthesis is the process by which green plants...",
+  sourceReference: "manual entry",
   sourceLabel: "Photosynthesis stub",
   sourceVersion: 1,
   objectives: [

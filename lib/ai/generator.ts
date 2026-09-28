@@ -32,14 +32,13 @@ export async function generateLearningPack(input: GenerationInput): Promise<Gene
   const rawData: RawProviderOutput = result.data;
   const now: ISODateString = new Date().toISOString();
 
-  // Create a deterministic sourceId if not provided in input (as it's absent from GenerationInput).
-  // In a real implementation this might be passed from the workspace state.
-  const sourceId = "stub-source-id" as SourceId;
+  const sourceId = input.sourceId;
   const packId = crypto.randomUUID() as PackId;
 
   const provenance: AssetProvenance = {
     sourceId: sourceId,
     sourceVersion: input.sourceVersion,
+    sourceReference: input.sourceReference,
     modelId: stubProvider.providerLabel,
     generatedAt: now,
     assetVersion: 1,

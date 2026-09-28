@@ -18,6 +18,8 @@ import type { ObjectiveId } from "../lib/contracts";
 // ─── Test input (exact values from Task 11 spec) ─────────────────────────────
 
 const testInput: GenerationInput = {
+  sourceId: "test-source-id" as any,
+  sourceReference: "manual entry",
   sourceContent:
     "Photosynthesis is the process by which green plants use light energy to convert carbon dioxide and water into glucose, releasing oxygen as a byproduct.",
   sourceLabel: "Photosynthesis — Task 11 Test",
