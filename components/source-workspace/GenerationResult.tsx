@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import type { GenerateActionResult } from "@/app/actions/generate";
+import { LearningPackReview } from "@/components/learning-pack-review/LearningPackReview";
 
 interface GenerationResultProps {
   result: GenerateActionResult;
@@ -15,12 +17,13 @@ interface GenerationResultProps {
  *   - Validation summary (issue count, objective coverage)
  *   - Quality warnings listed individually
  *   - Error message on failure
+ *   - "Review Assets" entry point into the Learning Pack Review workspace
  *
- * Does NOT build the full Learning Pack editor.
  * Does NOT automatically approve content.
  * Follows Swiss modernist design direction — no gradients, no glow, no glass.
  */
 export function GenerationResult({ result }: GenerationResultProps) {
+  const [showReview, setShowReview] = useState(false);
   if (result.status === "invalid-input") {
     return (
       <section
@@ -95,6 +98,7 @@ export function GenerationResult({ result }: GenerationResultProps) {
   const allObjectivesCovered = uncoveredCount === 0;
 
   return (
+    <>
     <section
       aria-labelledby="result-heading"
       className="border border-zinc-200 dark:border-zinc-800"
@@ -252,13 +256,40 @@ export function GenerationResult({ result }: GenerationResultProps) {
         </ul>
       </div>
 
-      {/* Teacher action note */}
+      {/* Teacher action — Review Assets */}
       <div className="border-t border-zinc-200 bg-zinc-50 px-5 py-3 dark:border-zinc-800 dark:bg-zinc-900/50">
-        <p className="text-xs text-zinc-500 dark:text-zinc-400">
-          Teacher review is required before this pack is approved. Review gate will be available in the next task.
-        </p>
+        {!showReview ? (
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              Teacher review is required before this pack is approved.
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowReview(true)}
+              className="border border-zinc-950 bg-zinc-950 px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-zinc-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-zinc-700 dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-950 dark:hover:bg-zinc-200"
+            >
+              Review Assets →
+            </button>
+          </div>
+        ) : (
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">
+            Review workspace is open below.
+          </p>
+        )}
       </div>
     </section>
+
+    {/* ── Learning Pack Review Workspace ──────────────────────────────── */}
+    {showReview && result.status === "success" && (
+      <div className="mt-6">
+        <LearningPackReview
+          pack={result.pack}
+          qualityIssues={result.validation.issues}
+          onClose={() => setShowReview(false)}
+        />
+      </div>
+    )}
+    </>
   );
 }
 
