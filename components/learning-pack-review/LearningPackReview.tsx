@@ -8,6 +8,7 @@ import type { AssetVersionHistory } from "@/lib/regeneration";
 import type { GenerationInput } from "@/lib/ai/types";
 import { AssetNavigation } from "./AssetNavigation";
 import { AssetDetailPanel } from "./AssetDetailPanel";
+import { StudentMode } from "@/components/student-mode";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Props
@@ -57,6 +58,7 @@ export function LearningPackReview({
 
   const selectedAsset = assets.find((a) => a.assetId === selectedAssetId) ?? null;
   const selectedHistory = histories.find((h) => h.assetId === selectedAssetId) ?? null;
+  const [showStudentMode, setShowStudentMode] = useState(false);
 
   // ── Derived pack-level state ─────────────────────────────────────────────
   const approvedCount = assets.filter((a) => a.reviewStatus === "approved").length;
@@ -141,6 +143,10 @@ export function LearningPackReview({
 
   // ── Render ───────────────────────────────────────────────────────────────
 
+  if (showStudentMode) {
+    return <StudentMode pack={currentPack} onExit={() => setShowStudentMode(false)} />;
+  }
+
   return (
     <section
       aria-labelledby="review-workspace-heading"
@@ -170,15 +176,24 @@ export function LearningPackReview({
             Pack {initialPack.packId.slice(0, 8)}… · v{initialPack.packVersion}
           </span>
         </div>
-        {onClose && (
+        <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={onClose}
-            className="border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800"
+            onClick={() => setShowStudentMode(true)}
+            className="border border-zinc-950 bg-zinc-950 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-zinc-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-zinc-700 dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-950 dark:hover:bg-zinc-200"
           >
-            ← Back to result
+            Student Mode →
           </button>
-        )}
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800"
+            >
+              ← Back to result
+            </button>
+          )}
+        </div>
       </div>
 
       {/* ── Pack-level review summary ──────────────────────────────────── */}
