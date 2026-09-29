@@ -36,6 +36,8 @@ export type GenerateActionResult =
       sourceVersion: number;
       sourceReference: string;
       generationInput: import("@/lib/ai/types").GenerationInput;
+      aiVerificationStatus?: "verified" | "issues-found" | "not-evaluated";
+      aiVerificationReason?: string;
     }
   | {
       status: "failure";

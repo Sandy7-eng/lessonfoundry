@@ -30,6 +30,11 @@ import type { WorkspaceState } from "@/lib/types";
 // RESULT TYPE
 // ─────────────────────────────────────────────────────────────────────────────
 
+import { createOpenAIQualityVerifier } from "@/lib/quality/providers/openai";
+import { verifyLearningPackGrounding } from "@/lib/quality/verifier";
+import type { AIQualityVerifier } from "@/lib/quality/types";
+import type { QualityId } from "@/lib/contracts";
+
 export type OrchestrationResult =
   | {
       status: "success";
@@ -39,36 +44,24 @@ export type OrchestrationResult =
       sourceVersion: number;
       sourceReference: string;
       generationInput: GenerationInput;
+      aiVerificationStatus?: "verified" | "issues-found" | "not-evaluated";
+      aiVerificationReason?: string;
     }
   | {
       status: "failure";
       error: GenerationError;
     };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ORCHESTRATOR
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Runs the complete generation pipeline from workspace state to a validated
- * LearningPack. The caller is responsible for validating WorkspaceState
- * before calling this function (i.e. validateWorkspace() returns isValid:true).
- *
- * Does NOT automatically approve content. The pack remains "draft".
- * Does NOT call OpenAI. Uses the deterministic stub provider.
- */
 export async function orchestrateGeneration(
-  state: WorkspaceState
+  state: WorkspaceState,
+  options?: { verifier?: AIQualityVerifier }
 ): Promise<OrchestrationResult> {
-  // ── Step 1: Create TrustedSource ──────────────────────────────────────────
   const source = createSource(
-    "Teacher-provided source", // label
+    "Teacher-provided source",
     state.source,
-    "teacher-provided-source" // stable local reference — no external URL needed
+    "teacher-provided-source"
   );
 
-  // ── Step 2: Build GenerationInput ─────────────────────────────────────────
-  // Map WorkspaceState Objectives (lib/types) → LearningObjective (lib/contracts)
   const objectives = state.objectives.map((obj) => ({
     objectiveId: obj.id as ObjectiveId,
     text: obj.text,
@@ -87,25 +80,44 @@ export async function orchestrateGeneration(
     length: state.constraints.length,
     answerReveal: state.constraints.answerReveal,
     modelConfig: {
-      provider: "openai", // value used for provenance label only — stub doesn't connect
+      provider: "openai",
       modelId: "stub/deterministic-generator",
       temperature: 0.2,
       configuredAt: new Date().toISOString(),
     },
   };
 
-  // ── Step 3: Generate ──────────────────────────────────────────────────────
   const generationResult = await generateLearningPack(generationInput);
 
   if (generationResult.status === "failure") {
     return { status: "failure", error: generationResult.error };
   }
 
-  // ── Step 4: Validate ──────────────────────────────────────────────────────
-  // Run immediately after generation. Do NOT silently modify the pack.
   const validation = validateLearningPack(generationResult.pack);
 
-  // ── Step 5: Return combined result ────────────────────────────────────────
+  // AI Verification (Task 21B)
+  const verifier = options?.verifier ?? createOpenAIQualityVerifier();
+  const verificationResult = await verifyLearningPackGrounding(
+    {
+      pack: generationResult.pack,
+      sourceContent: source.content,
+      objectives: generationInput.objectives,
+    },
+    verifier
+  );
+
+  if (verificationResult.status === "issues-found") {
+    validation.issues.push(...verificationResult.issues);
+  } else if (verificationResult.status === "not-evaluated") {
+    validation.issues.push({
+      issueId: crypto.randomUUID() as QualityId,
+      issueType: "unsupported-claim",
+      severity: "warning",
+      affectedAssetId: generationResult.pack.assets[0]?.assetId,
+      message: `AI verification: NOT EVALUATED — ${verificationResult.reason}. ${verificationResult.message}`,
+    });
+  }
+
   return {
     status: "success",
     pack: generationResult.pack,
@@ -114,5 +126,8 @@ export async function orchestrateGeneration(
     sourceVersion: source.sourceVersion,
     sourceReference: source.sourceReference,
     generationInput,
+    aiVerificationStatus: verificationResult.status,
+    aiVerificationReason:
+      verificationResult.status === "not-evaluated" ? verificationResult.reason : undefined,
   };
 }
