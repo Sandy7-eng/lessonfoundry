@@ -50,8 +50,24 @@ export { runProofOfConnection } from "@/lib/ai/verify";
 // ── Generator layer (server-only) ─────────────────────────────────────────────
 export { generateLearningPack } from "@/lib/ai/generator";
 
+import { createGeminiGenerationProvider } from "@/lib/ai/providers/gemini";
+export { createGeminiGenerationProvider };
+
+import { stubProvider } from "@/lib/ai/provider";
+
+/**
+ * Returns the active AI generation provider.
+ * Uses the deterministic stub if USE_STUB_PROVIDER="true", otherwise uses Gemini.
+ */
+export function getActiveGenerationProvider(): import("@/lib/ai/provider").AIGenerationProvider {
+  if (process.env.USE_STUB_PROVIDER === "true") {
+    return stubProvider;
+  }
+  return createGeminiGenerationProvider();
+}
+
 /**
  * The active provider label for logging and provenance records.
  * Swap this when a full pack provider is implemented.
  */
-export const ACTIVE_PROVIDER_LABEL = "openai/proof-provider";
+export const ACTIVE_PROVIDER_LABEL = "google/gemini";

@@ -80,8 +80,8 @@ export async function orchestrateGeneration(
     length: state.constraints.length,
     answerReveal: state.constraints.answerReveal,
     modelConfig: {
-      provider: "openai",
-      modelId: "stub/deterministic-generator",
+      provider: process.env.USE_STUB_PROVIDER === "true" ? "openai" : "google",
+      modelId: process.env.USE_STUB_PROVIDER === "true" ? "stub/deterministic-generator" : (process.env.GEMINI_MODEL || "gemini-3.5-flash"),
       temperature: 0.2,
       configuredAt: new Date().toISOString(),
     },

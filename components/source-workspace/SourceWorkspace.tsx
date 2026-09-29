@@ -180,7 +180,7 @@ export function SourceWorkspace() {
                 ? "Generating…"
                 : showValidation && !validation.isValid
                 ? "Fix the errors above to enable generation."
-                : "Uses the deterministic stub provider — no AI API calls."}
+                : "Uses Gemini AI provider for generation."}
             </p>
 
             {/* Primary action */}

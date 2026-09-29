@@ -3,8 +3,9 @@
 import { useState, useCallback } from "react";
 import type { LearningPack, LearningPackAsset, QualityIssue, ReviewStatus } from "@/lib/contracts";
 import { approveAsset, requestRevision, isPackStudentReady } from "@/lib/review";
-import { createInitialVersionHistories, regenerateAsset } from "@/lib/regeneration";
+import { createInitialVersionHistories } from "@/lib/regeneration";
 import type { AssetVersionHistory } from "@/lib/regeneration";
+import { regenerateAssetAction } from "@/app/actions/regenerate";
 import type { GenerationInput } from "@/lib/ai/types";
 import { AssetNavigation } from "./AssetNavigation";
 import { AssetDetailPanel } from "./AssetDetailPanel";
@@ -113,19 +114,17 @@ export function LearningPackReview({
     setIsRegenerating(true);
     setRegenerationError(null);
     try {
-      // Find current asset inside currentPack so TypeScript is happy with types
-      const assetToRegenerate = currentPack.assets.find(a => a.assetId === selectedAssetId);
-      if (!assetToRegenerate) return;
-      
-      const res = await regenerateAsset({
+      const res = await regenerateAssetAction({
         pack: currentPack,
-        targetAssetId: assetToRegenerate.assetId,
+        targetAssetId: selectedAssetId,
         reason: "Teacher requested regeneration",
         generationInput,
       });
 
       if (res.status === "failure") {
-        setRegenerationError(res.error.message);
+        setRegenerationError(res.message);
+      } else if (res.status === "invalid-input") {
+        setRegenerationError(res.problems.join(" "));
       } else {
         setAssets(res.updatedPack.assets);
         setHistories((prev) =>
@@ -134,8 +133,9 @@ export function LearningPackReview({
           )
         );
       }
-    } catch (e: any) {
-      setRegenerationError(e.message || "An unexpected error occurred");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "An unexpected error occurred";
+      setRegenerationError(msg);
     } finally {
       setIsRegenerating(false);
     }

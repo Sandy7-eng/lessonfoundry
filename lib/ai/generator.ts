@@ -1,4 +1,5 @@
-import { validateGenerationInput, inputValidationFailure, stubProvider } from "@/lib/ai/provider";
+import { validateGenerationInput, inputValidationFailure } from "@/lib/ai/provider";
+import { getActiveGenerationProvider } from "@/lib/ai/index";
 import type { GenerationInput, GenerationResult, RawProviderOutput, RawQuizQuestion } from "@/lib/ai/types";
 import type {
   LearningPack,
@@ -23,7 +24,8 @@ export async function generateLearningPack(input: GenerationInput): Promise<Gene
     return inputValidationFailure(validation);
   }
 
-  const result = await stubProvider.generate(input);
+  const provider = getActiveGenerationProvider();
+  const result = await provider.generate(input);
   if (result.status === "failure") {
     // If the provider fails (e.g. rate limit, or the stub itself throws a typed failure)
     return { status: "failure", error: result.error };
@@ -39,7 +41,7 @@ export async function generateLearningPack(input: GenerationInput): Promise<Gene
     sourceId: sourceId,
     sourceVersion: input.sourceVersion,
     sourceReference: input.sourceReference,
-    modelId: stubProvider.providerLabel,
+    modelId: provider.providerLabel,
     generatedAt: now,
     assetVersion: 1,
   };

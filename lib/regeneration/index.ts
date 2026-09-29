@@ -27,7 +27,7 @@ import type {
   PackConfiguration,
 } from "../contracts";
 import type { GenerationInput } from "../ai/types";
-import { stubProvider, type AIGenerationProvider } from "../ai/provider";
+import type { AIGenerationProvider } from "../ai/provider";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. REGENERATION INPUT
@@ -274,7 +274,6 @@ export async function regenerateAsset(
   request: RegenerationRequest,
 ): Promise<RegenerationResult> {
   const { pack, targetAssetId, reason, generationInput } = request;
-  const provider = request.provider ?? stubProvider;
 
   // ── Validate: find the target asset ──
   const targetIndex = pack.assets.findIndex(
@@ -292,22 +291,10 @@ export async function regenerateAsset(
 
   const originalAsset = pack.assets[targetIndex];
 
-  // ── Generate new content via the provider abstraction ──
-  const providerResult = await provider.generate(generationInput);
-  if (providerResult.status === "failure") {
-    return {
-      status: "failure",
-      error: {
-        code: "generation-failed",
-        message: providerResult.error.message,
-      },
-    };
-  }
-
-  // Build a temporary pack from the raw provider output to extract the
-  // matching asset type. We import generateLearningPack for this — but
-  // to avoid circular deps, we'll reconstruct it inline from the raw data.
-  // Actually, we can just call the full generator and pick the matching asset.
+  // ── Generate new content via the generator (single call) ──
+  // We call generateLearningPack once and extract only the matching asset.
+  // This avoids the double-generation bug where provider.generate() and
+  // generateLearningPack() were both called, wasting a full API round-trip.
   const { generateLearningPack } = await import("../ai/generator");
   const fullResult = await generateLearningPack(generationInput);
   if (fullResult.status !== "success") {
@@ -315,7 +302,7 @@ export async function regenerateAsset(
       status: "failure",
       error: {
         code: "generation-failed",
-        message: "Full generation failed during single-asset regeneration.",
+        message: fullResult.error.message,
       },
     };
   }
@@ -337,7 +324,7 @@ export async function regenerateAsset(
     sourceId: generationInput.sourceId,
     sourceVersion: generationInput.sourceVersion,
     sourceReference: generationInput.sourceReference,
-    modelId: provider.providerLabel,
+    modelId: matchingAsset.provenance.modelId,
     generatedAt: now,
     assetVersion: originalAsset.provenance.assetVersion + 1,
   };
