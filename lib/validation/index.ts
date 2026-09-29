@@ -233,17 +233,10 @@ export function validateLearningPack(pack: LearningPack): ValidationResult {
   }
 
   // 8. UNSUPPORTED_CLAIM
-  // The challenge specifically requires insufficient source material to be flagged rather than fabricated.
-  // We cannot deterministically check claims against the source without an LLM.
-  // Add a "not evaluated" issue if we have content. (Only add once)
-  if (pack.assets.length > 0) {
-    addIssue(
-      "unsupported-claim",
-      "warning",
-      "Not evaluated: deterministic checking cannot reliably verify claims against the source text.",
-      pack.assets[0].assetId
-    );
-  }
+  // The unsupported-claim check is now the responsibility of the AI verification
+  // layer (Task 21A), because deterministic checking cannot reliably verify claims.
+  // The orchestration pipeline will inject a "not evaluated" QualityIssue if AI
+  // verification fails or is skipped.
 
   const hasErrors = issues.some((i) => i.severity === "error");
 

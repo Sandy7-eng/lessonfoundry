@@ -38,7 +38,7 @@ async function runTests() {
   console.log("TEST D - Pack and all assets remain Draft:", allDraft ? "PASS" : "FAIL");
 
   const hasIssues = result.validation.issues.length > 0;
-  console.log("TEST E - Validation issues present:", hasIssues ? "PASS" : "FAIL");
+  console.log("TEST E - Validation issues zero (no placeholder):", !hasIssues ? "PASS" : "FAIL");
   console.log("         Issue count:", result.validation.issues.length);
   result.validation.issues.forEach((i) =>
     console.log(
